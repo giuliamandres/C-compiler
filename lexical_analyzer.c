@@ -50,13 +50,14 @@ void tokenErr(const Token *tk, const char *fmt,...){
 
 }
 
+int line = 0;
+
 int getNextToken(){
     char ch = 0;
     int currentState = 0;
     Token *tk = (Token *)malloc(sizeof(Token));
-    int line = 0;
     //char *currentToken = (char *) malloc(20 * sizeof(char));
-    char currentToken[10] = {'\0'};
+    char currentToken[20] = {'\0'};
     //char currentToken[20] = "";
     char *endptr = NULL;
     regex_t regex;
@@ -98,6 +99,7 @@ int getNextToken(){
                         strncat(currentToken, &ch, 1);
                     }
                     else{
+                        printf("state 0");
                         buffer++;
                         currentState = 8;
                         strncat(currentToken, &ch, 1);
@@ -109,14 +111,9 @@ int getNextToken(){
                     strncat(currentToken, &ch, 1);
                 }
                 else if(ch == '"'){
-                    printf("OK\n");
                     buffer++;
-                    printf("tok %s\n", currentToken);
                     strncat(currentToken, &ch, 1);
-                    //strcat(currentToken, &ch);
-                    //printf("current tok %s ", currentToken);
                     currentState = 30;
-                    printf("curr state %d ", currentState);
                     break;
                 }
                 else if(ch == ','){
@@ -164,7 +161,7 @@ int getNextToken(){
                 }
                 else if(ch == '/'){
                     buffer++;
-                    currentState = 46;
+                    currentState = 31;
                 }
                 else if(ch == '.'){
                     buffer++;
@@ -189,10 +186,6 @@ int getNextToken(){
                 else if(ch == '>'){
                     buffer++;
                     currentState = 52;
-                }
-                else if(ch =='/'){
-                    buffer++;
-                    currentState = 53;
                 }
                 else {
                     tokenErr(addToken(END, line), "invalid character");}
@@ -288,6 +281,7 @@ int getNextToken(){
                 printf("digit %ld\n", tk->i);
                 return CT_INT;
             case 8:
+                printf("case 8");
                 if(isdigit(ch) && ch != '8' && ch != '9'){
                     buffer++;
                     strncat(currentToken, &ch, 1);
@@ -303,7 +297,7 @@ int getNextToken(){
                     strncat(currentToken, &ch, 1);
                     currentState = 9;
                 } else{
-                    tokenErr(addToken(END, line), "invalid character");
+                    currentState = 62;
                 }
                 break;
             case 9:
@@ -490,49 +484,49 @@ int getNextToken(){
                 strcpy(tk->text, currentToken);
                 return CT_CHAR;
             case 30:
+                //return -1;
                 printf("OK2 ");
-                regularExp = regcomp(&regex, "[^\"\\\\]", 0);
-                if(regularExp){
-                    printf("Could not compile regex");
-                    return -1;
-                }
-                if(ch == '\\'){
-                    buffer++;
-                    currentState = 31;
-                    strncat(currentToken, &ch, 1);
-                }
-                else if(!(regexec(&regex, &ch, 0, NULL, 0)) && ch != '\\'){
-                    printf("OKkkk");
+                if(ch != '"'){
                     buffer++;
                     strncat(currentToken, &ch, 1);
-                    //break;
-                    currentState = 32;
+                    printf("curr %s\n", currentToken);
+                    //return -1;
                 }
-                printf("state  %d ", currentState);
-                return -2;
-                break;
-            case 31:
-                if(ch == 'a' || ch == 'b' || ch == 'f' || ch == 'n' || ch == 'r' || ch == 't' || ch == 'v' || ch == 39 || ch == '?' || ch == '"' || ch == '\\' || ch == '0'){
-                    buffer++;
-                    strncat(currentToken, &ch, 1);
-                    currentState = 32;
-                }
-                break;
-            case 32:
-                printf("OK3");
-                return -1;
-                if(ch == '"'){
+                else{
                     buffer++;
                     strncat(currentToken, &ch, 1);
                     currentState = 33;
                 }
                 break;
+            case 31:
+                if(ch == '*'){
+                    buffer++;
+                    currentState = 34; //53
+                }
+                else if(ch == '/'){
+                    buffer++;
+                    currentState = 55; //55
+                }
+                else{
+                    currentState = 32; //61
+                }
+                break;
+            case 32:
+                addToken(DIV, line);
+                return DIV;
             case 33:
-                //printf("ok4");
-                //break;
                 tk = addToken(CT_STRING, line);
                 strcpy(tk->text, currentToken);
                 return CT_STRING;
+            case 34:
+                if(ch != '*'){
+                    buffer++;
+                }
+                else{
+                    buffer++;
+                    currentState = 54;
+                }
+                break;
             case 35:
                 addToken(COMMA, line);
                 return COMMA;
@@ -567,18 +561,8 @@ int getNextToken(){
                 addToken(MUL, line);
                 return MUL;
             case 46:
-                if(ch == '*'){
-                    buffer++;
-                    currentState = 54;
-                }
-                else if(ch == '/'){
-                    buffer++;
-                    currentState = 55;
-                }
-                else{
-                    currentState = 61;
-                }
-                break;
+                addToken(LESS, line);
+                return LESS;
             case 47:
                 addToken(DOT, line);
                 return DOT;
@@ -601,7 +585,7 @@ int getNextToken(){
                     currentState = 58;
                 }
                 else{
-                    currentState = 62;
+                    currentState = 53;
                 }
                 break;
             case 51:
@@ -610,7 +594,7 @@ int getNextToken(){
                     currentState = 59;
                 }
                 else{
-                    currentState = 63;
+                    currentState = 46;
                 }
                 break;
             case 52:
@@ -619,7 +603,28 @@ int getNextToken(){
                     currentState = 60;
                 }
                 else{
-                    currentState = 64;
+                    currentState = 61;
+                }
+                break;
+            case 53:
+                addToken(NOT, line);
+                return NOT;
+            case 54:
+                if(ch == '/'){
+                    buffer++;
+                    currentState = 0;
+                }
+                else {
+                    buffer++;
+                }
+                break;
+            case 55:
+                if(ch == '\n' || ch == '\r' || ch == '\0'){
+                    buffer++;
+                    currentState = 0;
+                }
+                else{
+                    buffer++;
                 }
                 break;
             case 56:
@@ -638,17 +643,13 @@ int getNextToken(){
                 addToken(GREATEREQ, line);
                 return GREATEREQ;
             case 61:
-                addToken(DIV, line);
-                return DIV;
-            case 62:
-                addToken(NOT, line);
-                return NOT;
-            case 63:
-                addToken(LESS, line);
-                return LESS;
-            case 64:
                 addToken(GREATER, line);
                 return GREATER;
+            case 62:
+                tk = addToken(CT_INT, line);
+                tk->i = atoi(currentToken);
+                return CT_INT;
+
 
         }
     }
@@ -659,19 +660,19 @@ void showTokens(){
     while (curr != NULL)
     {
         if(curr->code == 0){
-            printf("TOKEN %d %s \n", curr->code, curr->text);
+            printf("TOKEN %d %s %d\n", curr->code, curr->text, curr->line);
         }
         else if(curr->code == 16){
-            printf("TOKEN %d %ld \n", curr->code, curr->i);
+            printf("TOKEN %d %ld %d\n", curr->code, curr->i, curr->line);
         }
         else if(curr->code == 17){
-            printf("TOKEN %d %f \n", curr->code, curr->r);
+            printf("TOKEN %d %f %d\n", curr->code, curr->r, curr->line);
         }
         else if(curr->code == 18 || curr->code == 19){
-            printf("TOKEN %d %s \n", curr->code, curr->text);
+            printf("TOKEN %d %s %d\n", curr->code, curr->text, curr->line);
         }
         else {
-            printf("TOKEN %d \n", curr->code);
+            printf("TOKEN %d %d\n", curr->code, curr->line);
         }
         curr = curr->next;
     }
@@ -686,7 +687,7 @@ void freeMemory(){
     }
 }
 
-int main(){
+/*int main(){
     FILE *f = fopen("file.txt", "r");
     //char *buffer = 0;
     if(f == NULL)
@@ -712,5 +713,6 @@ int main(){
     }
     showTokens();
     freeMemory();
+    fun();
 
-}
+}*/
