@@ -50,6 +50,17 @@ void tokenErr(const Token *tk, const char *fmt,...){
 
 }
 
+void error(const char *fmt,...){
+    va_list va;
+    va_start(va, fmt);
+    fprintf(stderr, "error: ");
+    vfprintf(stderr, fmt, va);
+    fputc('\n', stderr);
+    va_end(va);
+    exit(-1);
+
+}
+
 int line = 0;
 
 int getNextToken(){
