@@ -42,7 +42,7 @@ Token *addToken(int code, int line){
 void tokenErr(const Token *tk, const char *fmt,...){
     va_list va;
     va_start(va, fmt);
-    fprintf(stderr, "error in line %d ", tk->line);
+    fprintf(stderr, "error in line %d token code %d ", tk->line, tk->code);
     vfprintf(stderr, fmt, va);
     fputc('\n', stderr);
     va_end(va);

@@ -29,6 +29,8 @@ int main(){
     }
     showTokens();
     //freeMemory();
-    printTk();
+    //printTk();
+    int sintactic = unit();
+    printf("%d", sintactic);
 
 }
